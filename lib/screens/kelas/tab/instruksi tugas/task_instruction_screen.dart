@@ -4,6 +4,7 @@ class TaskInstructionScreen extends StatelessWidget {
   final String courseName;
   final String taskTitle;
   final String dueDate;
+  final submissionDate;
   final String instructions;
   final bool isComplete;
 
@@ -11,6 +12,7 @@ class TaskInstructionScreen extends StatelessWidget {
     required this.courseName,
     required this.taskTitle,
     required this.dueDate,
+    required this.submissionDate,
     required this.instructions,
     required this.isComplete,
   });
@@ -42,7 +44,7 @@ class TaskInstructionScreen extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        'Dikumpulkan pada $dueDate',
+                        'Dikumpulkan pada $submissionDate',
                         style: TextStyle(color: Colors.black54),
                         overflow: TextOverflow
                             .ellipsis, // Menambahkan elipsis jika teks terlalu panjang

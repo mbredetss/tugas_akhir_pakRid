@@ -6,7 +6,7 @@ final Map<String, List<Map<String, dynamic>>> courseTasks = {
       'isComplete': false,
       'dueDate': 'Sel 7 Nov 2024 pukul 12.00',
       'instructions': 'Persiapkan presentasi dengan pendekatan multimedia...',
-      'submissionDate': 'Sel 5 Nov 2024 pada 08.19',
+      'submissionDate': 'Rabu 09 Oktober 2024',
     },
     {
       'title': 'Tugas Presentasi Ilmiah',

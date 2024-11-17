@@ -23,7 +23,7 @@ class _PostTabState extends State<PostTab> {
 
   void _addComment(Post post, int index) {
     final newComment = Comment(
-      username: 'Current User', // Ganti dengan username yang sesuai
+      username: 'Me', // Ganti dengan username yang sesuai
       message: _commentControllers[index]!.text,
       date: DateTime.now(),
     );
