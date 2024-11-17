@@ -76,12 +76,12 @@ flutter:
     - assets/images/praktikum_teknologi_big_data.jpg
     - assets/images/pengolahan_citra_digital.jpg
     - assets/images/manajemen_industri_teknologi.jpg
-    # - assets/images/teknologi_smart_city.jpg
-    # - assets/images/embedded_system.jpg
-    # - assets/images/seni_komunikasi_profesional.jpg
-    # - assets/images/etika_profesi_komputer.jpg
-    # - assets/images/pengujian_perangkat_lunak.jpg
-    # - assets/images/praktikum_pemrograman_mobile.jpg
+    - assets/images/teknologi_smart_city.jpg
+    - assets/images/embedded_system.jpg
+    - assets/images/seni_komunikasi_profesional.jpg
+    - assets/images/etika_profesi_komputer.jpg
+    - assets/images/pengujian_perangkat_lunak.jpg
+    - assets/images/praktikum_pemrograman_mobile.jpg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

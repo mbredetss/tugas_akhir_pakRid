@@ -16,7 +16,7 @@ class CourseCard extends StatelessWidget {
         description: Text("AW 2024/2025"),
       ),
       content: Container(
-        height: 150,
+        height: 50,
         decoration: BoxDecoration(
           image: DecorationImage(
             image: AssetImage(imagePath),
