@@ -49,6 +49,32 @@ class _TaskInstructionScreenState extends State<TaskInstructionScreen> {
     });
   }
 
+  void showUploadMessage(BuildContext context, bool success) {
+    final message = success
+        ? 'File berhasil diunggah!'
+        : 'Gagal mengunggah file. Silakan coba lagi.';
+
+    final color = success ? Colors.green : Colors.red;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              success ? Icons.check_circle : Icons.error,
+              color: Colors.white,
+            ),
+            SizedBox(width: 10),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: color,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isLateSubmission = widget.submissionDate != null &&
@@ -104,20 +130,26 @@ class _TaskInstructionScreenState extends State<TaskInstructionScreen> {
                   ElevatedButton(
                     onPressed: () async {
                       if (fileHandler.selectedFile != null) {
-                        await fileUploader.uploadFile(
-                          fileHandler.selectedFile!,
-                          widget.courseName,
-                          widget.taskTitle,
-                          onProgress: handleUploadProgress,
-                          onComplete: () {
-                            TaskManager.moveToCompletedTab(
-                              widget.courseName,
-                              widget.taskTitle,
-                              widget.onTaskCompleted,
-                            );
-                          },
-                        );
-                        handleFileSelected(false);
+                        try {
+                          await fileUploader.uploadFile(
+                            fileHandler.selectedFile!,
+                            widget.courseName,
+                            widget.taskTitle,
+                            onProgress: handleUploadProgress,
+                            onComplete: () {
+                              TaskManager.moveToCompletedTab(
+                                widget.courseName,
+                                widget.taskTitle,
+                                widget.onTaskCompleted,
+                              );
+                              showUploadMessage(context, true);
+                            },
+                          );
+                        } catch (e) {
+                          showUploadMessage(context, false);
+                        } finally {
+                          handleFileSelected(false);
+                        }
                       }
                     },
                     child: Text('Kumpulkan'),
