@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/notification_provider.dart';
-import '../widgets/course_card.dart';
-import '../widgets/custom_app_bar.dart';
-import '../utils/page_slider.dart';
-import 'notification_screen.dart';
-import 'schedule_screen.dart';
-import 'chat_list_screen.dart';
-import 'kelas/course_detail_screen.dart';
 import 'package:badges/badges.dart' as badges;
-import '../utils/data/course_data.dart';
+import '../../providers/notification_provider.dart';
+import 'homeScreen/home_screen.dart';
+import 'chatScreen/chat_list_screen.dart';
+import 'notificationScreen/notification_screen.dart';
+import 'scheduleScreen/schedule_screen.dart';
+import 'homeScreen/widgets/custom_app_bar.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -17,21 +14,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final PageController _pageController = PageController();
-  int _currentIndex = 0;
   int _selectedIndex = 2;
-
-  @override
-  void initState() {
-    super.initState();
-    _startAutoSlide();
-  }
-
-  void _startAutoSlide() => PageSlider.autoSlide(_pageController, _currentIndex, (index) {
-    setState(() {
-      _currentIndex = index;
-    });
-  });
 
   void _onBottomMenuTapped(int index) {
     setState(() {
@@ -46,53 +29,14 @@ class _HomeScreenState extends State<HomeScreen> {
       case 1:
         return ChatListScreen();
       case 2:
-        return _buildClassScreen();
+        return ClassScreen();
       case 3:
         return Center(child: Text("To Do List"));
       case 4:
         return ScheduleScreen(x: 2, y: 3, z: 1, a: 4, b: 2);
       default:
-        return _buildClassScreen();
+        return ClassScreen();
     }
-  }
-
-  Widget _buildClassScreen() {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          PageSlider(
-            pageController: _pageController,
-            currentIndex: _currentIndex,
-            images: ['atmajaya.jpg', 'fti.jpg', 'uajm.jpg'],
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              "Available courses",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-          ),
-          ...courses.map((course) => GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => CourseDetailScreen(
-                    courseName: course['title'],
-                    files: course['files'],
-                  ),
-                ),
-              );
-            },
-            child: CourseCard(
-              courseTitle: course['title'],
-              imagePath: course['image'],
-            ),
-          )),
-        ],
-      ),
-    );
   }
 
   @override
