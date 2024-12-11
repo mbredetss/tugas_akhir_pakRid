@@ -11,10 +11,6 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             'assets/images/uajmlogo.png',
             height: 30,
           ),
-          TextButton(
-            onPressed: () {},
-            child: Text("Log in", style: TextStyle(color: Colors.white)),
-          ),
         ],
       ),
       backgroundColor: Colors.blue,
