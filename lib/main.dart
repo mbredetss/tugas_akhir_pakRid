@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'providers/notification_provider.dart';
-import 'screens/home_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'providers/notification_provider.dart';
 import 'firebase_options.dart';
+import 'login_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,7 +14,7 @@ void main() async {
   } catch (e) {
     print('Firebase initialization failed: $e');
   }
-  
+
   runApp(
     MultiProvider(
       providers: [
@@ -25,14 +25,12 @@ void main() async {
   );
 }
 
-
-
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: HomeScreen(),
+      home: LoginScreen(),
     );
   }
 }
