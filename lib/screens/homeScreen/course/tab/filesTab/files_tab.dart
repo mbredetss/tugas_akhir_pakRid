@@ -7,15 +7,35 @@ class FilesTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: files.map((file) => ListTile(
-          leading: Icon(Icons.folder, color: Colors.amber),
-          title: Text(file['name']!),
-          subtitle: Text('Uploaded by ${file['uploadedBy']}'),
-        )).toList(),
-      ),
-    );
+    return files.isEmpty
+        ? Center(
+            child: Text(
+              "No files available.",
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+          )
+        : SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: files.map((file) {
+                final fileName = file['name'] ?? "Unknown File";
+                final uploadedBy = file['uploadedBy'] ?? "Unknown";
+
+                return ListTile(
+                  leading: Icon(Icons.folder, color: Colors.amber),
+                  title: Text(
+                    fileName,
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text('Uploaded by $uploadedBy'),
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Opening $fileName")),
+                    );
+                  },
+                );
+              }).toList(),
+            ),
+          );
   }
 }

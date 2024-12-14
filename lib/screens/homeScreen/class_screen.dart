@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dart:convert'; // Untuk parsing JSON
+import 'dart:convert'; // Tambahkan untuk parsing JSON
 
 import 'utils/page_slider.dart';
 import 'widgets/course_card.dart';
 import 'course/course_detail_screen.dart';
 
 class ClassScreen extends StatefulWidget {
+  final List<String> userCourses;
+
+  ClassScreen({required this.userCourses});
+
   @override
   _ClassScreenState createState() => _ClassScreenState();
 }
@@ -14,65 +18,72 @@ class ClassScreen extends StatefulWidget {
 class _ClassScreenState extends State<ClassScreen> {
   final PageController _pageController = PageController();
   int _currentIndex = 0;
-
   List<Map<String, dynamic>> _courses = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _fetchCourses();
-    _startAutoSlide();
   }
 
   // Fungsi untuk mengambil data dari Firestore
   Future<void> _fetchCourses() async {
-    try {
-      final snapshot = await FirebaseFirestore.instance.collection('courses').get();
-      setState(() {
-        _courses = snapshot.docs.map((doc) {
-          final data = doc.data();
-
-          List<Map<String, String>> files = [];
-          try {
-            // Parsing elemen files (array string JSON)
-            final filesData = data['files'];
-            if (filesData is List) {
-              files = filesData
-                  .map((file) {
-                    // Memastikan setiap elemen array string di-parse ke List<Map<String, String>>
-                    if (file is String) {
-                      return (json.decode(file) as List)
-                          .map((e) => Map<String, String>.from(e as Map))
-                          .toList()
-                          .first; // Ambil elemen pertama jika ada
-                    }
-                    return <String, String>{};
-                  })
-                  .toList();
-            }
-          } catch (e) {
-            print('Error parsing files: $e');
-          }
-
-          return {
-            'title': data['title'],
-            'image': data['image'],
-            'files': files,
-          };
-        }).toList();
-      });
-    } catch (error) {
-      print('Error fetching courses: $error');
-    }
+  if (widget.userCourses.isEmpty) {
+    setState(() {
+      _isLoading = false;
+    });
+    return;
   }
 
-  void _startAutoSlide() {
-    PageSlider.autoSlide(_pageController, _currentIndex, (index) {
-      setState(() {
-        _currentIndex = index;
-      });
+  try {
+    final snapshot = await FirebaseFirestore.instance
+        .collection('courses')
+        .where('title', whereIn: widget.userCourses)
+        .get();
+
+    setState(() {
+      _courses = snapshot.docs.map((doc) {
+        final data = doc.data();
+        print("Raw course data: $data"); // Debugging log
+
+        // Ambil dan parse data files
+        final rawFiles = data['files'] ?? []; // Data files (array of strings)
+        print("Raw files data: $rawFiles"); // Debugging log
+
+        List<Map<String, String>> parsedFiles = [];
+        try {
+          if (rawFiles is List) {
+            for (var file in rawFiles) {
+              if (file is String) {
+                final List<dynamic> decodedFile = json.decode(file);
+                parsedFiles.addAll(
+                  decodedFile.map((e) => Map<String, String>.from(e)),
+                );
+              }
+            }
+          }
+        } catch (e) {
+          print('Error parsing files: $e');
+        }
+
+        return {
+          'title': data['title'] ?? 'No Title',
+          'image': data['image'] ?? '',
+          'files': parsedFiles, // Masukkan hasil parsing
+        };
+      }).toList();
+    });
+  } catch (error) {
+    print('Error fetching courses: $error');
+  } finally {
+    setState(() {
+      _isLoading = false;
     });
   }
+}
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -92,31 +103,38 @@ class _ClassScreenState extends State<ClassScreen> {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ),
-          _courses.isEmpty
+          _isLoading
               ? Center(
                   child: CircularProgressIndicator(),
                 )
-              : Column(
-                  children: _courses.map((course) {
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => CourseDetailScreen(
-                              courseName: course['title'],
-                              files: course['files'],
-                            ),
+              : _courses.isEmpty
+                  ? Center(
+                      child: Text(
+                        "No courses available. Please select your courses in registration.",
+                        style: TextStyle(fontSize: 16, color: Colors.grey),
+                      ),
+                    )
+                  : Column(
+                      children: _courses.map((course) {
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => CourseDetailScreen(
+                                  courseName: course['title'],
+                                  files: course['files'], // Dikirim ke detail screen
+                                ),
+                              ),
+                            );
+                          },
+                          child: CourseCard(
+                            courseTitle: course['title'],
+                            imagePath: course['image'],
                           ),
                         );
-                      },
-                      child: CourseCard(
-                        courseTitle: course['title'],
-                        imagePath: course['image'],
-                      ),
-                    );
-                  }).toList(),
-                ),
+                      }).toList(),
+                    ),
         ],
       ),
     );
