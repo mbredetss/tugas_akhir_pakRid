@@ -4,13 +4,13 @@ import 'package:badges/badges.dart' as badges;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import '../../providers/notification_provider.dart';
+import 'notificationScreen/providers/notification_provider.dart';
 import 'homeScreen/class_screen.dart';
 import 'chatScreen/chat_list_screen.dart';
 import 'notificationScreen/notification_screen.dart';
 import 'scheduleScreen/schedule_screen.dart';
 import 'homeScreen/widgets/custom_app_bar.dart';
-import '../login_screen.dart';
+import '../../login_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final String userName;

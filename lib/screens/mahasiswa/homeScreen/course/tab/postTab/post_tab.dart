@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../../../utils/data/post_data.dart';
+import 'data/post_data.dart';
 
 class PostTab extends StatefulWidget {
   final String courseName;

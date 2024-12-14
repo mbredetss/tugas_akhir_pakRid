@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'providers/notification_provider.dart';
+import 'screens/mahasiswa/notificationScreen/providers/notification_provider.dart';
 import 'firebase_options.dart';
 import 'login_screen.dart';
 

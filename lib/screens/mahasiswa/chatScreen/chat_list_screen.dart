@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../widgets/chat_item.dart';
+import 'widgets/chat_item.dart';
 
 class ChatListScreen extends StatelessWidget {
   @override
