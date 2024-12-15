@@ -29,19 +29,11 @@ class _LoginScreenState extends State<LoginScreen> {
           .get();
 
       if (userDoc.exists) {
-        final userRole = userDoc['role'] ?? 'mahasiswa';
-
-        if (userRole == 'mahasiswa') {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
                 builder: (context) => HomeScreen(userName: userDoc['name'])),
           );
-        } else if (userRole == 'dosen') {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Welcome Dosen! Menu Dosen')),
-          );
-        }
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

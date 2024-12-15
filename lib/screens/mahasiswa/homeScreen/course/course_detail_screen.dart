@@ -34,7 +34,7 @@ class CourseDetailScreen extends StatelessWidget {
         body: TabBarView(
           children: [
             PostTab(courseName: courseName),
-            FilesTab(files: files), // Delegasikan ke modul FilesTab
+            FilesTab(courseName: courseName), // Delegasikan ke modul FilesTab
             TaskTab(courseName: courseName, tasks: tasks), // Delegasikan ke TaskTab
           ],
         ),

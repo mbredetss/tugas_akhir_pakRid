@@ -1,23 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:dio/dio.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:typed_data';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
-import 'dart:typed_data';
-import 'folder_content_screen.dart';
 
-
-class FilesTab extends StatefulWidget {
+class FolderContentScreen extends StatefulWidget {
   final String courseName;
+  final String folderName;
 
-  FilesTab({required this.courseName});
+  FolderContentScreen({
+    required this.courseName,
+    required this.folderName,
+  });
 
   @override
-  _FilesTabState createState() => _FilesTabState();
+  _FolderContentScreenState createState() => _FolderContentScreenState();
 }
 
-class _FilesTabState extends State<FilesTab>
+class _FolderContentScreenState extends State<FolderContentScreen>
     with SingleTickerProviderStateMixin {
   List<String> fileList = [];
   List<String> folderList = [];
@@ -32,13 +37,12 @@ class _FilesTabState extends State<FilesTab>
   void initState() {
     super.initState();
     _checkUserRole(); // Periksa role user
-    _fetchFilesAndFolders();
+    _fetchFolderContents();
 
     // Animasi untuk FAB
     _animationController =
         AnimationController(vsync: this, duration: Duration(milliseconds: 250));
-    _animation =
-        CurvedAnimation(parent: _animationController, curve: Curves.easeInOut);
+    _animation = CurvedAnimation(parent: _animationController, curve: Curves.easeInOut);
   }
 
   @override
@@ -52,7 +56,6 @@ class _FilesTabState extends State<FilesTab>
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        // Ambil data user berdasarkan email
         final userDoc = await FirebaseFirestore.instance
             .collection('users')
             .where('email', isEqualTo: user.email)
@@ -70,18 +73,18 @@ class _FilesTabState extends State<FilesTab>
     }
   }
 
-  Future<void> _fetchFilesAndFolders() async {
+  Future<void> _fetchFolderContents() async {
     try {
-      final storageRef =
-          FirebaseStorage.instance.ref().child('File/${widget.courseName}');
-      final ListResult result = await storageRef.listAll();
+      final storageRef = FirebaseStorage.instance.ref();
+      final folderRef =
+          storageRef.child('File/${widget.courseName}/${widget.folderName}');
+      final ListResult result = await folderRef.listAll();
 
       List<String> files = result.items
           .map((item) => item.name)
           .where((name) => name != '.keep')
           .toList();
-      List<String> folders =
-          result.prefixes.map((prefix) => prefix.name).toList();
+      List<String> folders = result.prefixes.map((prefix) => prefix.name).toList();
 
       setState(() {
         fileList = files;
@@ -89,80 +92,11 @@ class _FilesTabState extends State<FilesTab>
         isLoading = false;
       });
     } catch (e) {
-      print("Error fetching files/folders: $e");
+      print("Error fetching folder contents: $e");
       setState(() {
         isLoading = false;
       });
     }
-  }
-
-   // Fungsi menghapus item
-  Future<void> _deleteItem(String itemName, bool isFolder) async {
-    String itemType = isFolder ? "folder" : "file";
-    String itemPath = isFolder
-        ? 'File/${widget.courseName}/$itemName/'
-        : 'File/${widget.courseName}/$itemName';
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text("Delete $itemType"),
-          content: Text("Are you sure you want to delete this $itemType?"),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Cancel
-              },
-              child: Text("Cancel", style: TextStyle(color: Colors.grey)),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                try {
-                  Navigator.of(context).pop(); // Close dialog
-                  showDialog(
-                    context: context,
-                    barrierDismissible: false,
-                    builder: (context) =>
-                        Center(child: CircularProgressIndicator()),
-                  );
-
-                  final storageRef =
-                      FirebaseStorage.instance.ref().child(itemPath);
-                  if (isFolder) {
-                    // Delete folder recursively
-                    final ListResult folderContents =
-                        await storageRef.listAll();
-                    for (var file in folderContents.items) {
-                      await file.delete();
-                    }
-                    for (var subFolder in folderContents.prefixes) {
-                      await subFolder.delete();
-                    }
-                  }
-                  await storageRef.delete();
-
-                  Navigator.pop(context); // Close loading dialog
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                        content:
-                            Text("$itemType '$itemName' deleted successfully")),
-                  );
-                  _fetchFilesAndFolders();
-                } catch (e) {
-                  Navigator.pop(context); // Close loading dialog
-                  print("Error deleting $itemType: $e");
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Failed to delete $itemType: $e")),
-                  );
-                }
-              },
-              child: Text("Delete"),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   Future<void> _uploadFile() async {
@@ -172,26 +106,23 @@ class _FilesTabState extends State<FilesTab>
       File file = File(result.files.single.path!);
       String fileName = result.files.single.name;
 
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => Center(child: CircularProgressIndicator()),
-      );
+      _showProgressDialog("Uploading $fileName");
 
       try {
-        final ref = FirebaseStorage.instance
-            .ref()
-            .child('File/${widget.courseName}/$fileName');
+        final ref = FirebaseStorage.instance.ref().child(
+            'File/${widget.courseName}/${widget.folderName}/$fileName');
         await ref.putFile(file);
-
-        Navigator.pop(context); // Tutup dialog loading
+        Navigator.of(context).pop(); // Tutup dialog progress
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('File berhasil diupload: $fileName')),
         );
-        _fetchFilesAndFolders();
+        _fetchFolderContents();
       } catch (e) {
-        Navigator.pop(context); // Tutup dialog loading
+        Navigator.of(context).pop(); // Tutup dialog progress
         print("Error uploading file: $e");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error uploading file: $e')),
+        );
       }
     }
   }
@@ -199,7 +130,6 @@ class _FilesTabState extends State<FilesTab>
   Future<void> _uploadFolder() async {
     TextEditingController folderNameController = TextEditingController();
 
-    // Menampilkan dialog input untuk nama folder
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -225,38 +155,29 @@ class _FilesTabState extends State<FilesTab>
                 String folderName = folderNameController.text.trim();
 
                 if (folderName.isEmpty) {
-                  // Menampilkan pesan jika nama folder kosong
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Folder name cannot be empty!')),
                   );
                   return;
                 }
 
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (context) =>
-                      Center(child: CircularProgressIndicator()),
-                );
+                _showProgressDialog("Creating folder $folderName");
 
-                // Buat folder di Firebase Storage
                 try {
                   final folderRef = FirebaseStorage.instance
                       .ref()
-                      .child('File/${widget.courseName}/$folderName/');
+                      .child('File/${widget.courseName}/${widget.folderName}/$folderName/');
                   await folderRef.child('.keep').putData(Uint8List(0));
 
-                  Navigator.pop(context); // Tutup dialog loading
+                  Navigator.of(context).pop(); // Tutup dialog progress
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                        content:
-                            Text('Folder "$folderName" created successfully')),
+                    SnackBar(content: Text('Folder "$folderName" created successfully')),
                   );
 
-                  Navigator.of(context).pop(); // Tutup dialog
-                  _fetchFilesAndFolders(); // Refresh daftar folder
+                  Navigator.of(context).pop(); // Tutup dialog input folder
+                  _fetchFolderContents(); // Refresh daftar folder
                 } catch (e) {
-                  Navigator.pop(context); // Tutup dialog loading
+                  Navigator.of(context).pop(); // Tutup dialog progress
                   print("Error creating folder: $e");
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Failed to create folder: $e')),
@@ -266,6 +187,28 @@ class _FilesTabState extends State<FilesTab>
               child: Text("Create"),
             ),
           ],
+        );
+      },
+    );
+  }
+
+  void _showProgressDialog(String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Row(
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(width: 20),
+                Expanded(child: Text(message)),
+              ],
+            ),
+          ),
         );
       },
     );
@@ -282,38 +225,76 @@ class _FilesTabState extends State<FilesTab>
     });
   }
 
+  void _openSubFolder(String subFolderName) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FolderContentScreen(
+          courseName: widget.courseName,
+          folderName: '${widget.folderName}/$subFolderName',
+        ),
+      ),
+    );
+  }
+
+  Future<void> _downloadAndOpenFile(String fileName) async {
+    _showProgressDialog("Downloading $fileName");
+
+    try {
+      final storageRef = FirebaseStorage.instance.ref().child(
+          'File/${widget.courseName}/${widget.folderName}/$fileName');
+      final fileUrl = await storageRef.getDownloadURL();
+
+      final dir = await getApplicationDocumentsDirectory();
+      final filePath = "${dir.path}/$fileName";
+
+      Dio dio = Dio();
+      await dio.download(fileUrl, filePath);
+
+      Navigator.of(context).pop(); // Tutup dialog progress
+      await OpenFilex.open(filePath);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("File opened successfully: $fileName")),
+      );
+    } catch (e) {
+      Navigator.of(context).pop(); // Tutup dialog progress
+      print("Error downloading/opening file: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to open file: $fileName")),
+      );
+    }
+  }
+  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: Text('${widget.folderName}'),
+      ),
       body: isLoading
           ? Center(child: CircularProgressIndicator())
           : (fileList.isEmpty && folderList.isEmpty)
-              ? Center(child: Text("No files or folders available."))
+              ? Center(child: Text("No files or folders in this directory."))
               : ListView(
                   children: [
-                    ...folderList.map((folderName) => ListTile(
-                          leading: Icon(Icons.folder, color: Colors.amber),
-                          title: Text(folderName),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => FolderContentScreen(
-                                  courseName: widget.courseName,
-                                  folderName: folderName,
-                                ),
-                              ),
-                            );
-                          },
-                        )),
-                    ...fileList.map((fileName) => ListTile(
-                          leading:
-                              Icon(Icons.insert_drive_file, color: Colors.blue),
-                          title: Text(fileName),
-                        )),
+                    if (folderList.isNotEmpty) ...[
+                      ...folderList.map((folderName) => ListTile(
+                            leading: Icon(Icons.folder, color: Colors.amber),
+                            title: Text(folderName),
+                            onTap: () => _openSubFolder(folderName),
+                          )),
+                    ],
+                    if (fileList.isNotEmpty) ...[
+                      ...fileList.map((fileName) => ListTile(
+                            leading: Icon(Icons.insert_drive_file, color: Colors.blue),
+                            title: Text(fileName),
+                            onTap: () => _downloadAndOpenFile(fileName),
+                          )),
+                    ],
                   ],
                 ),
-                
       floatingActionButton: isDosen
           ? Column(
               mainAxisSize: MainAxisSize.min,
