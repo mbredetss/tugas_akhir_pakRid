@@ -84,61 +84,73 @@ class _FilesTabState extends State<FilesTab>
     });
   }
 
-  Widget _buildListTile({
-    required String name,
-    required bool isFolder,
-  }) {
-    return ListTile(
-      leading: Icon(
-        isFolder ? Icons.folder : Icons.insert_drive_file,
-        color: isFolder ? Colors.amber : Colors.blue,
-      ),
-      title: Text(name),
-      trailing: isDosen
-          ? PopupMenuButton<String>(
-              onSelected: (value) async {
-                if (value == 'delete') {
-                  await showDeleteConfirmationDialog(
-                    context,
-                    widget.courseName,
-                    name,
-                    isFolder: isFolder,
-                    onDeleteSuccess: () async {
-                      await _refreshFilesAndFolders(
-                        deletedItem: name,
-                        isFolder: isFolder,
-                      );
-                    },
-                  );
-                }
-              },
-              itemBuilder: (context) => [
-                PopupMenuItem(
-                  value: 'delete',
-                  child: Row(
-                    children: [
-                      Icon(Icons.delete, color: Colors.red),
-                      SizedBox(width: 8),
-                      Text("Delete"),
-                    ],
-                  ),
+Widget _buildListTile({
+  required String name,
+  required bool isFolder,
+}) {
+  return ListTile(
+    leading: Icon(
+      isFolder ? Icons.folder : Icons.insert_drive_file,
+      color: isFolder ? Colors.amber : Colors.blue,
+    ),
+    title: Text(name),
+    trailing: isDosen
+        ? PopupMenuButton<String>(
+            onSelected: (value) async {
+              if (value == 'delete') {
+                await showDeleteConfirmationDialog(
+                  context,
+                  widget.courseName,
+                  name,
+                  isFolder: isFolder,
+                  onDeleteSuccess: () async {
+                    await _refreshFilesAndFolders(
+                      deletedItem: name,
+                      isFolder: isFolder,
+                    );
+                  },
+                );
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete, color: Colors.red),
+                    SizedBox(width: 8),
+                    Text("Delete"),
+                  ],
                 ),
-              ],
-            )
-          : null,
-      onTap: isFolder
-          ? () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => FolderContentScreen(
-                    courseName: widget.courseName,
-                    folderName: name,
-                  ),
-                ),
-              )
-          : null,
-    );
-  }
+              ),
+            ],
+          )
+        : null,
+    onTap: () async {
+      // Pastikan floating button ditutup sebelum navigasi
+      if (_showUploadOptions) {
+        await _animationController.reverse();
+        setState(() {
+          _showUploadOptions = false;
+        });
+      }
+
+      // Navigasi ke layar folder jika itu folder
+      if (isFolder) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => FolderContentScreen(
+              courseName: widget.courseName,
+              folderName: name,
+            ),
+          ),
+        );
+      }
+    },
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {
